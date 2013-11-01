@@ -2954,18 +2954,20 @@ static int mdp4_calc_pipe_mdp_bw(struct msm_fb_data_type *mfd,
 	
 	quota >>= shift;
 	/* factor 1.15 for ab */
-			quota = quota * MDP4_BW_AB_FACTOR / 100;
-	/* downscaling factor for ab */
+	pipe->bw_ab_quota = quota * MDP4_BW_AB_FACTOR / 100;
+	/* factor 1.25 for ib */
+	pipe->bw_ib_quota = quota * MDP4_BW_IB_FACTOR / 100;
+	/* down scaling factor for ib */
 	if ((pipe->dst_h) && (pipe->src_h) &&
 	    (pipe->src_h > pipe->dst_h)) {
-			quota = quota * pipe->src_h / pipe->dst_h;
-			pr_debug("%s: src_h=%d dst_h=%d mdp ab %llu\n",
-					__func__, pipe->src_h, pipe->dst_h, ((u64)quota << 16));
+		u32 ib = quota; 
+		ib *= pipe->src_h;
+		ib /= pipe->dst_h;
+		pipe->bw_ib_quota = max((u64)ib, pipe->bw_ib_quota); 
+		pr_debug("%s: src_h=%d dst_h=%d mdp ib %u, ib_quota=%llu\n", 
+			 __func__, pipe->src_h, pipe->dst_h,
+			 ib<<shift, pipe->bw_ib_quota<<shift);
 	}
-	pipe->bw_ab_quota = quota;
-
-	 /*factor 1.5 for ib */
-	pipe->bw_ib_quota = quota * MDP4_BW_IB_FACTOR / 100;
 
 	pipe->bw_ab_quota <<= shift;
 	pipe->bw_ib_quota <<= shift;
